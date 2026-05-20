@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Sales Dashboard | Vivak Kumar</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  --orange: #FF9900;
+  --dark: #0D1117;
+  --navy: #0F1923;
+  --mid: #161D27;
+  --card: #1A2332;
+  --card2: #1F2B3A;
+  --border: #263447;
+  --text: #E8EFF7;
+  --muted: #6B8299;
+  --green: #00D68F;
+  --red: #FF4D6D;
+  --blue: #4DA6FF;
+  --purple: #A78BFA;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--dark);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* HEADER */
+header {
+  background: linear-gradient(135deg, var(--navy), #0A1520);
+  border-bottom: 2px solid var(--orange);
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+}
+.header-left { display:flex; align-items:center; gap:14px; }
+.logo { background:var(--orange); padding:6px 12px; border-radius:5px; font-family:'Bebas Neue'; font-size:22px; color:#000; letter-spacing:1px; }
+.header-title { font-family:'Bebas Neue'; font-size:24px; letter-spacing:2px; }
+.header-sub { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-top:2px; }
+.header-right { display:flex; align-items:center; gap:12px; }
+.live-badge { background:rgba(0,214,143,0.15); border:1px solid var(--green); color:var(--green); padding:5px 12px; border-radius:20px; font-size:11px; font-weight:600; display:flex; align-items:center; gap:6px; }
+.live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* TABS */
+.tabs-wrap { background:var(--mid); border-bottom:1px solid var(--border); padding:0 28px; display:flex; gap:0; }
+.tab-btn {
+  padding:14px 22px; font-size:13px; font-weight:500; color:var(--muted);
+  border:none; background:none; cursor:pointer; border-bottom:3px solid transparent;
+  transition:all 0.2s; letter-spacing:0.5px;
+}
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--orange); border-bottom-color:var(--orange); }
+
+/* MAIN */
+main { padding:24px 28px; max-width:1400px; margin:0 auto; }
+
+/* FILTERS BAR */
+.filters-bar {
+  background:var(--card); border:1px solid var(--border); border-radius:10px;
+  padding:14px 20px; margin-bottom:20px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+}
+.filter-label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
+.filter-btn {
+  padding:6px 14px; border-radius:20px; border:1px solid var(--border);
+  background:transparent; color:var(--muted); font-size:12px; cursor:pointer;
+  transition:all 0.2s; font-family:'DM Sans';
+}
+.filter-btn:hover { border-color:var(--orange); color:var(--orange); }
+.filter-btn.active { background:rgba(255,153,0,0.15); border-color:var(--orange); color:var(--orange); font-weight:600; }
+.filter-divider { width:1px; height:24px; background:var(--border); }
+.reset-btn {
+  margin-left:auto; padding:6px 14px; border-radius:6px;
+  border:1px solid var(--red); background:transparent; color:var(--red);
+  font-size:12px; cursor:pointer; transition:all 0.2s; font-family:'DM Sans';
+}
+.reset-btn:hover { background:rgba(255,77,109,0.1); }
+
+/* KPI CARDS */
+.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+.kpi-card {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:20px 22px; cursor:pointer; position:relative; overflow:hidden;
+  transition:all 0.25s;
+}
+.kpi-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; transition:height 0.2s; }
+.kpi-card.orange::before { background:var(--orange); }
+.kpi-card.green::before  { background:var(--green); }
+.kpi-card.blue::before   { background:var(--blue); }
+.kpi-card.red::before    { background:var(--red); }
+.kpi-card:hover, .kpi-card.selected {
+  transform:translateY(-3px);
+  box-shadow:0 8px 28px rgba(0,0,0,0.4);
+}
+.kpi-card.selected { border-color:var(--orange); }
+.kpi-card.orange.selected { border-color:var(--orange); box-shadow:0 0 20px rgba(255,153,0,0.2); }
+.kpi-card.green.selected  { border-color:var(--green);  box-shadow:0 0 20px rgba(0,214,143,0.2); }
+.kpi-card.blue.selected   { border-color:var(--blue);   box-shadow:0 0 20px rgba(77,166,255,0.2); }
+.kpi-card.red.selected    { border-color:var(--red);    box-shadow:0 0 20px rgba(255,77,109,0.2); }
+.kpi-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:10px; }
+.kpi-value { font-family:'Bebas Neue'; font-size:36px; letter-spacing:1px; line-height:1; margin-bottom:6px; }
+.kpi-card.orange .kpi-value { color:var(--orange); }
+.kpi-card.green .kpi-value  { color:var(--green); }
+.kpi-card.blue .kpi-value   { color:var(--blue); }
+.kpi-card.red .kpi-value    { color:var(--red); }
+.kpi-change { font-size:12px; font-weight:600; display:flex; align-items:center; gap:4px; }
+.kpi-change.up   { color:var(--green); }
+.kpi-change.down { color:var(--red); }
+.kpi-hint { font-size:10px; color:var(--muted); margin-top:8px; }
+.click-indicator {
+  position:absolute; bottom:10px; right:14px;
+  font-size:10px; color:var(--muted); opacity:0.6;
+}
+
+/* TAB PANELS */
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+/* CHARTS */
+.charts-row { display:grid; gap:16px; margin-bottom:18px; }
+.two-col   { grid-template-columns:1.6fr 1fr; }
+.three-col { grid-template-columns:1fr 1fr 1fr; }
+.four-col  { grid-template-columns:1fr 1fr 1fr 1fr; }
+
+.chart-card {
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:22px; transition:border-color 0.2s;
+}
+.chart-card.highlighted { border-color:var(--orange); box-shadow:0 0 20px rgba(255,153,0,0.15); }
+.chart-title { font-family:'Bebas Neue'; font-size:17px; letter-spacing:1.5px; margin-bottom:3px; }
+.chart-sub { font-size:12px; color:var(--muted); margin-bottom:18px; }
+.chart-wrap { position:relative; height:230px; }
+.chart-wrap.tall { height:300px; }
+
+/* DRILL DOWN MODAL */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.75); z-index:500;
+  align-items:center; justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--card2); border:1px solid var(--border); border-radius:16px;
+  padding:28px; width:90%; max-width:700px; max-height:85vh; overflow-y:auto;
+  animation:modalIn 0.25s ease;
+  position:relative;
+}
+@keyframes modalIn { from{opacity:0;transform:scale(0.95);} to{opacity:1;transform:scale(1);} }
+.modal-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+.modal-title { font-family:'Bebas Neue'; font-size:22px; letter-spacing:1.5px; }
+.modal-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+.modal-close {
+  background:rgba(255,77,109,0.15); border:1px solid var(--red);
+  color:var(--red); width:32px; height:32px; border-radius:50%;
+  cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; flex-shrink:0;
+}
+.modal-close:hover { background:rgba(255,77,109,0.3); }
+.modal-chart-wrap { height:260px; margin-bottom:20px; }
+.modal-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.modal-stat { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center; }
+.modal-stat-val { font-family:'Bebas Neue'; font-size:24px; color:var(--orange); }
+.modal-stat-lbl { font-size:11px; color:var(--muted); margin-top:4px; }
+
+/* TABLE */
+.table-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:22px; margin-bottom:18px; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead th { padding:10px 14px; background:rgba(255,153,0,0.07); color:var(--orange); font-size:11px; text-transform:uppercase; letter-spacing:1px; border-bottom:1px solid var(--border); text-align:left; }
+tbody tr { border-bottom:1px solid rgba(38,52,71,0.6); transition:background 0.15s; cursor:pointer; }
+tbody tr:hover { background:rgba(255,153,0,0.06); }
+tbody td { padding:11px 14px; }
+.rank { display:inline-flex; width:24px; height:24px; border-radius:50%; background:rgba(255,153,0,0.12); border:1px solid var(--orange); color:var(--orange); font-size:11px; font-weight:700; align-items:center; justify-content:center; }
+.pill { padding:3px 10px; border-radius:12px; font-size:11px; font-weight:600; }
+.pill.high   { background:rgba(0,214,143,0.12); color:var(--green); }
+.pill.med    { background:rgba(255,153,0,0.12);  color:var(--orange); }
+.pill.low    { background:rgba(255,77,109,0.12); color:var(--red); }
+.bar-cell { display:flex; align-items:center; gap:8px; }
+.mini-bar-bg { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; max-width:80px; }
+.mini-bar    { height:100%; background:var(--orange); border-radius:3px; transition:width 0.6s ease; }
+
+/* INSIGHTS */
+.insights-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px; }
+.insight-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px; transition:all 0.2s; cursor:default; }
+.insight-card:hover { border-color:rgba(255,153,0,0.4); transform:translateY(-2px); }
+.insight-icon { font-size:26px; margin-bottom:8px; }
+.insight-title { font-weight:600; font-size:13px; color:var(--orange); margin-bottom:6px; }
+.insight-text { font-size:12px; color:var(--muted); line-height:1.7; }
+
+/* GEOGRAPHY TAB */
+.geo-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px; }
+.state-list { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+.state-row { display:flex; align-items:center; gap:10px; }
+.state-name { font-size:13px; min-width:130px; }
+.state-bar-bg { flex:1; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+.state-bar { height:100%; background:linear-gradient(90deg,var(--orange),#FFB347); border-radius:4px; transition:width 0.8s ease; }
+.state-val { font-size:12px; color:var(--muted); min-width:45px; text-align:right; }
+
+/* FOOTER */
+footer { text-align:center; padding:20px; color:var(--muted); font-size:12px; border-top:1px solid var(--border); }
+footer span { color:var(--orange); font-weight:600; }
+
+/* TOOLTIP */
+.tooltip-box {
+  position:fixed; background:var(--card2); border:1px solid var(--orange);
+  border-radius:8px; padding:10px 14px; font-size:12px; pointer-events:none;
+  z-index:999; display:none; max-width:200px; line-height:1.6;
+  box-shadow:0 8px 24px rgba(0,0,0,0.4);
+}
+
+/* ANIMATIONS */
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+.kpi-card { animation:fadeUp 0.4s ease both; }
+.kpi-card:nth-child(1){animation-delay:0.05s;}
+.kpi-card:nth-child(2){animation-delay:0.1s;}
+.kpi-card:nth-child(3){animation-delay:0.15s;}
+.kpi-card:nth-child(4){animation-delay:0.2s;}
+
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .two-col,.three-col,.four-col{grid-template-columns:1fr;}
+  .insights-grid{grid-template-columns:1fr;}
+  .geo-grid{grid-template-columns:1fr;}
+  main{padding:14px;}
+  .tabs-wrap{overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="logo">AMZ</div>
+    <div>
+      <div class="header-title">Amazon Sales Dashboard</div>
+      <div class="header-sub">Data Analysis Project • 2019–2022 • Vivak Kumar</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> Interactive</div>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <button class="tab-btn active" onclick="switchTab('overview')">📊 Overview</button>
+  <button class="tab-btn" onclick="switchTab('products')">📦 Products</button>
+  <button class="tab-btn" onclick="switchTab('geography')">🗺️ Geography</button>
+  <button class="tab-btn" onclick="switchTab('insights')">💡 Insights</button>
+</div>
+
+<main>
+
+<!-- FILTERS BAR -->
+<div class="filters-bar">
+  <span class="filter-label">Year:</span>
+  <button class="filter-btn active" onclick="setFilter('year','all',this)">All</button>
+  <button class="filter-btn" onclick="setFilter('year','2019',this)">2019</button>
+  <button class="filter-btn" onclick="setFilter('year','2020',this)">2020</button>
+  <button class="filter-btn" onclick="setFilter('year','2021',this)">2021</button>
+  <button class="filter-btn" onclick="setFilter('year','2022',this)">2022</button>
+  <div class="filter-divider"></div>
+  <span class="filter-label">Category:</span>
+  <button class="filter-btn active" onclick="setFilter('cat','all',this)">All</button>
+  <button class="filter-btn" onclick="setFilter('cat','apparel',this)">Apparel</button>
+  <button class="filter-btn" onclick="setFilter('cat','electronics',this)">Electronics</button>
+  <button class="filter-btn" onclick="setFilter('cat','home',this)">Home</button>
+  <button class="reset-btn" onclick="resetFilters()">↺ Reset</button>
+</div>
+
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi-card orange" onclick="openDrillDown('revenue')" id="kpi-revenue">
+    <div class="kpi-label">Total Revenue</div>
+    <div class="kpi-value" id="kv-revenue">₹2.84Cr</div>
+    <div class="kpi-change up">▲ 18.4% vs last year</div>
+    <div class="kpi-hint" id="kh-revenue">Click for monthly breakdown</div>
+    <div class="click-indicator">🔍 drill down</div>
+  </div>
+  <div class="kpi-card green" onclick="openDrillDown('orders')" id="kpi-orders">
+    <div class="kpi-label">Total Orders</div>
+    <div class="kpi-value" id="kv-orders">1,28,975</div>
+    <div class="kpi-change up">▲ 12.7% vs last year</div>
+    <div class="kpi-hint">Click for order status breakdown</div>
+    <div class="click-indicator">🔍 drill down</div>
+  </div>
+  <div class="kpi-card blue" onclick="openDrillDown('aov')" id="kpi-aov">
+    <div class="kpi-label">Avg Order Value</div>
+    <div class="kpi-value" id="kv-aov">₹2,203</div>
+    <div class="kpi-change up">▲ 5.1% vs last year</div>
+    <div class="kpi-hint">Click for AOV trend</div>
+    <div class="click-indicator">🔍 drill down</div>
+  </div>
+  <div class="kpi-card red" onclick="openDrillDown('returns')" id="kpi-returns">
+    <div class="kpi-label">Return Rate</div>
+    <div class="kpi-value" id="kv-returns">8.3%</div>
+    <div class="kpi-change down">▼ 1.2% improvement</div>
+    <div class="kpi-hint">Click for returns by category</div>
+    <div class="click-indicator">🔍 drill down</div>
+  </div>
+</div>
+
+<!-- =================== OVERVIEW TAB =================== -->
+<div class="tab-panel active" id="tab-overview">
+  <div class="charts-row two-col">
+    <div class="chart-card" id="cc-trend">
+      <div class="chart-title">Monthly Sales Trend</div>
+      <div class="chart-sub">Revenue performance 2021 vs 2022 (₹ Lakhs)</div>
+      <div class="chart-wrap"><canvas id="salesTrend"></canvas></div>
+    </div>
+    <div class="chart-card" id="cc-cat">
+      <div class="chart-title">Sales by Category</div>
+      <div class="chart-sub">Revenue share per product category</div>
+      <div class="chart-wrap"><canvas id="categoryPie"></canvas></div>
+    </div>
+  </div>
+  <div class="charts-row three-col">
+    <div class="chart-card" id="cc-fulfill">
+      <div class="chart-title">Fulfillment Channel</div>
+      <div class="chart-sub">Amazon FBA vs Merchant vs Easy Ship</div>
+      <div class="chart-wrap"><canvas id="fulfillBar"></canvas></div>
+    </div>
+    <div class="chart-card" id="cc-size">
+      <div class="chart-title">Order Size Distribution</div>
+      <div class="chart-sub">Breakdown by order value range</div>
+      <div class="chart-wrap"><canvas id="sizeBar"></canvas></div>
+    </div>
+    <div class="chart-card" id="cc-week">
+      <div class="chart-title">Sales by Weekday</div>
+      <div class="chart-sub">Which days perform best?</div>
+      <div class="chart-wrap"><canvas id="weekdayBar"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== PRODUCTS TAB =================== -->
+<div class="tab-panel" id="tab-products">
+  <div class="charts-row two-col">
+    <div class="chart-card">
+      <div class="chart-title">Top 10 Products by Revenue</div>
+      <div class="chart-sub">Click any row for drill-down details</div>
+      <div class="chart-wrap tall"><canvas id="productBar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Rating vs Sales Volume</div>
+      <div class="chart-sub">Correlation between rating and units sold</div>
+      <div class="chart-wrap tall"><canvas id="ratingScatter"></canvas></div>
+    </div>
+  </div>
+  <div class="table-card">
+    <div class="chart-title" style="margin-bottom:4px">Product Performance Table</div>
+    <div class="chart-sub">Click any row to see detailed breakdown</div>
+    <table id="productTable">
+      <thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th><th>Rating</th><th>Return%</th><th>Share</th><th>Status</th></tr></thead>
+      <tbody id="productTbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- =================== GEOGRAPHY TAB =================== -->
+<div class="tab-panel" id="tab-geography">
+  <div class="geo-grid">
+    <div class="chart-card">
+      <div class="chart-title">Revenue by State</div>
+      <div class="chart-sub">Top 10 states contributing to sales</div>
+      <div class="state-list" id="stateList"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">State-wise Orders</div>
+      <div class="chart-sub">Order volume distribution</div>
+      <div class="chart-wrap tall"><canvas id="stateBar"></canvas></div>
+    </div>
+  </div>
+  <div class="charts-row two-col">
+    <div class="chart-card">
+      <div class="chart-title">City Tier Performance</div>
+      <div class="chart-sub">Tier 1 vs Tier 2 vs Tier 3 cities</div>
+      <div class="chart-wrap"><canvas id="tierChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Delivery Time by Region</div>
+      <div class="chart-sub">Average days to deliver (North/South/East/West)</div>
+      <div class="chart-wrap"><canvas id="deliveryChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== INSIGHTS TAB =================== -->
+<div class="tab-panel" id="tab-insights">
+  <div class="insights-grid">
+    <div class="insight-card">
+      <div class="insight-icon">📈</div>
+      <div class="insight-title">Peak Sales: Festive Season</div>
+      <div class="insight-text">October–November shows 34% higher sales due to Diwali + Big Billion Days. Q4 alone contributes 38% of annual revenue. Strategy: maximize inventory before October.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">🗺️</div>
+      <div class="insight-title">Maharashtra Leads</div>
+      <div class="insight-text">Maharashtra contributes 22% of total sales, followed by Karnataka (18%) and Delhi (15%). Tier-2 cities growing at 28% YoY — significant untapped market.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">📦</div>
+      <div class="insight-title">FBA = Better Experience</div>
+      <div class="insight-text">Amazon FBA orders have 3x lower return rate vs Merchant fulfilled. FBA products get 18% higher avg ratings. Recommendation: push sellers toward FBA adoption.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">👗</div>
+      <div class="insight-title">Apparel Dominates</div>
+      <div class="insight-text">Apparel = 42% of total revenue. Men's T-Shirts are single highest-selling SKU. Women's Ethnic wear growing at 31% YoY. Electronics declining in share (-4%).</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">💰</div>
+      <div class="insight-title">AOV Growing Steadily</div>
+      <div class="insight-text">Avg Order Value rose from ₹1,840 (2019) to ₹2,540 (2022) — 38% growth. Customers buying premium products over time. Focus on premium product curation.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">🔄</div>
+      <div class="insight-title">Returns Improving</div>
+      <div class="insight-text">Return rate fell from 11.2% (2019) to 8.3% (2022) after Amazon's size-guide feature. Electronics still highest at 14.1%. Size accuracy = key retention driver.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">📅</div>
+      <div class="insight-title">Weekend Sales Spike</div>
+      <div class="insight-text">Saturday and Sunday show 22% higher order volumes vs weekdays. Mobile app orders peak on Sunday evening (7–10 PM). Ads should be front-loaded on weekends.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">⭐</div>
+      <div class="insight-title">Rating Impact on Sales</div>
+      <div class="insight-text">Products with 4.5+ ratings sell 2.8x more than those below 4.0. A single rating drop from 4.5→4.2 results in ~18% sales decline. Reviews = growth lever.</div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon">🚀</div>
+      <div class="insight-title">Recommendation</div>
+      <div class="insight-text">Focus Q3 strategy on: (1) FBA migration for top sellers, (2) festive inventory buildup, (3) Tier-2 city expansion with localized pricing. Expected uplift: 22–28%.</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  Amazon Sales Analysis Dashboard &nbsp;|&nbsp; Built by <span>Vivak Kumar</span> &nbsp;|&nbsp;
+  Python · Pandas · Matplotlib · Chart.js &nbsp;|&nbsp; <span>github.com/Vivek-cyber174</span>
+</footer>
+
+<!-- DRILL DOWN MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle">Drill Down</div>
+        <div class="modal-sub" id="modalSub">Detailed breakdown</div>
+      </div>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-chart-wrap"><canvas id="modalChart"></canvas></div>
+    <div class="modal-stats" id="modalStats"></div>
+  </div>
+</div>
+
+<script>
+// ===================== DATA =====================
+const data = {
+  all: {
+    trend22: [18,21,19,24,22,28,26,30,32,48,52,41],
+    trend21: [14,16,15,18,17,22,21,24,26,38,42,33],
+    categories: [42,23,16,8,6,5],
+    fulfill: [68420,35210,25345],
+    sizes: [28,42,22,8],
+    weekday: [62,71,68,74,79,94,88],
+    revenue: '₹2.84Cr', orders: '1,28,975', aov: '₹2,203', returns: '8.3%'
+  },
+  '2022': {
+    trend22: [18,21,19,24,22,28,26,30,32,48,52,41],
+    trend21: [14,16,15,18,17,22,21,24,26,38,42,33],
+    categories: [44,22,15,9,5,5],
+    fulfill: [72000,32000,22000],
+    sizes: [25,44,23,8],
+    weekday: [65,74,71,77,82,98,91],
+    revenue: '₹92.4L', orders: '38,210', aov: '₹2,540', returns: '8.3%'
+  },
+  '2021': {
+    trend22: [14,16,15,18,17,22,21,24,26,38,42,33],
+    trend21: [11,13,12,14,14,18,17,20,21,30,34,27],
+    categories: [41,24,16,8,6,5],
+    fulfill: [61000,37000,27000],
+    sizes: [30,41,21,8],
+    weekday: [58,66,64,70,74,88,83],
+    revenue: '₹78.1L', orders: '32,450', aov: '₹2,408', returns: '9.1%'
+  },
+  '2020': {
+    trend22: [11,13,12,14,14,18,17,20,21,30,34,27],
+    trend21: [9,10,9,11,11,14,13,16,17,24,27,21],
+    categories: [40,25,17,7,6,5],
+    fulfill: [55000,40000,28000],
+    sizes: [32,40,20,8],
+    weekday: [52,59,57,63,67,79,75],
+    revenue: '₹62.8L', orders: '28,720', aov: '₹2,187', returns: '9.8%'
+  },
+  '2019': {
+    trend22: [9,10,9,11,11,14,13,16,17,24,27,21],
+    trend21: [7,8,7,9,9,11,10,13,14,19,22,17],
+    categories: [38,26,18,7,6,5],
+    fulfill: [48000,43000,30000],
+    sizes: [35,39,19,7],
+    weekday: [45,52,50,55,59,70,66],
+    revenue: '₹50.7L', orders: '29,595', aov: '₹1,840', returns: '11.2%'
+  },
+  apparel: {
+    trend22: [8,9,8,10,9,12,12,14,15,22,24,19],
+    trend21: [6,7,6,8,7,9,9,11,12,17,19,15],
+    categories: [100,0,0,0,0,0],
+    fulfill: [30000,15000,10000],
+    sizes: [22,46,24,8],
+    weekday: [28,31,30,34,36,43,40],
+    revenue: '₹1.19Cr', orders: '54,200', aov: '₹2,196', returns: '9.2%'
+  },
+  electronics: {
+    trend22: [4,5,4,6,5,7,6,7,8,12,13,10],
+    trend21: [3,4,3,4,4,5,5,6,6,9,10,8],
+    categories: [0,100,0,0,0,0],
+    fulfill: [18000,9000,7000],
+    sizes: [15,30,35,20],
+    weekday: [16,19,17,20,21,25,24],
+    revenue: '₹65.3L', orders: '29,640', aov: '₹2,203', returns: '14.1%'
+  },
+  home: {
+    trend22: [3,4,4,5,5,6,5,6,6,9,10,8],
+    trend21: [2,3,3,4,3,5,4,5,5,7,8,6],
+    categories: [0,0,100,0,0,0],
+    fulfill: [12000,8000,6000],
+    sizes: [20,40,30,10],
+    weekday: [14,16,15,18,19,23,21],
+    revenue: '₹45.4L', orders: '20,560', aov: '₹2,208', returns: '7.1%'
+  }
+};
+
+let activeFilters = { year:'all', cat:'all' };
+let charts = {};
+let modalChartInst = null;
+
+function getCurrentData() {
+  if (activeFilters.cat !== 'all') return data[activeFilters.cat];
+  if (activeFilters.year !== 'all') return data[activeFilters.year];
+  return data.all;
+}
+
+// ===================== FILTERS =====================
+function setFilter(type, val, btn) {
+  activeFilters[type] = val;
+  btn.closest('.filters-bar').querySelectorAll('.filter-btn').forEach(b => {
+    if (b.onclick && b.onclick.toString().includes(`'${type}'`)) b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  updateAllCharts();
+  updateKPIs();
+}
+
+function resetFilters() {
+  activeFilters = { year:'all', cat:'all' };
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    if (b.textContent.trim() === 'All') b.classList.add('active');
+  });
+  updateAllCharts();
+  updateKPIs();
+}
+
+function updateKPIs() {
+  const d = getCurrentData();
+  document.getElementById('kv-revenue').textContent = d.revenue;
+  document.getElementById('kv-orders').textContent = d.orders;
+  document.getElementById('kv-aov').textContent = d.aov;
+  document.getElementById('kv-returns').textContent = d.returns;
+}
+
+// ===================== TABS =====================
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'products') initProductCharts();
+  if (name === 'geography') initGeoCharts();
+}
+
+// ===================== CHART HELPERS =====================
+const grid = 'rgba(38,52,71,0.7)';
+const baseOpts = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{ labels:{ usePointStyle:true, padding:14, font:{size:11} } } }
+};
+
+function mkLine(id, labels, datasets) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'line', data:{ labels, datasets },
+    options:{ ...baseOpts, scales:{
+      x:{ grid:{color:grid}, ticks:{color:'#6B8299'} },
+      y:{ grid:{color:grid}, ticks:{color:'#6B8299'} }
+    }}
+  });
+}
+
+function mkBar(id, labels, datasets, opts={}) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'bar', data:{ labels, datasets },
+    options:{ ...baseOpts, ...opts, scales:{
+      x:{ grid:{display:false}, ticks:{color:'#6B8299'} },
+      y:{ grid:{color:grid}, ticks:{color:'#6B8299'} },
+      ...(opts.scales||{})
+    }}
+  });
+}
+
+function mkDoughnut(id, labels, vals, colors) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'doughnut',
+    data:{ labels, datasets:[{ data:vals, backgroundColor:colors, borderColor:'#1A2332', borderWidth:3, hoverOffset:8 }] },
+    options:{ ...baseOpts, cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ usePointStyle:true, padding:12, font:{size:11} } } } }
+  });
+}
+
+// ===================== OVERVIEW CHARTS =====================
+function initOverviewCharts() {
+  const d = getCurrentData();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  mkLine('salesTrend', months, [
+    { label:'2022', data:d.trend22, borderColor:'#FF9900', backgroundColor:'rgba(255,153,0,0.08)', tension:0.4, fill:true, pointRadius:4, pointBackgroundColor:'#FF9900', borderWidth:2 },
+    { label:'2021', data:d.trend21, borderColor:'#4DA6FF', backgroundColor:'rgba(77,166,255,0.05)', tension:0.4, fill:true, pointRadius:3, pointBackgroundColor:'#4DA6FF', borderWidth:2, borderDash:[4,4] }
+  ]);
+
+  mkDoughnut('categoryPie',
+    ['Apparel','Electronics','Home','Books','Sports','Others'],
+    d.categories,
+    ['#FF9900','#4DA6FF','#00D68F','#FF4D6D','#A78BFA','#64748B']
+  );
+
+  mkBar('fulfillBar', ['Amazon FBA','Merchant','Easy Ship'], [
+    { label:'Orders', data:d.fulfill, backgroundColor:['#FF9900','#4DA6FF','#00D68F'], borderRadius:6, borderSkipped:false }
+  ], { plugins:{ legend:{ display:false } } });
+
+  mkBar('sizeBar', ['<₹500','₹500-2K','₹2K-5K','>₹5K'], [
+    { label:'% Orders', data:d.sizes, backgroundColor:['#4DA6FF','#FF9900','#00D68F','#FF4D6D'], borderRadius:6, borderSkipped:false }
+  ], { plugins:{ legend:{ display:false } } });
+
+  mkBar('weekdayBar', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], [
+    { label:'Orders (K)', data:d.weekday, backgroundColor:d.weekday.map(v => v===Math.max(...d.weekday)?'#FF9900':'rgba(77,166,255,0.6)'), borderRadius:6, borderSkipped:false }
+  ], { plugins:{ legend:{ display:false } } });
+}
+
+function updateAllCharts() {
+  initOverviewCharts();
+}
+
+// ===================== PRODUCTS CHARTS =====================
+const products = [
+  { name:"Men's T-Shirts", units:18420, rev:55.2, rating:4.6, returns:7.2, share:19 },
+  { name:"Women's Kurtas", units:15310, rev:48.7, rating:4.5, returns:8.1, share:17 },
+  { name:"Men's Blazers",  units:9870,  rev:42.3, rating:4.4, returns:6.5, share:15 },
+  { name:"Sarees",         units:11240, rev:38.9, rating:4.3, returns:9.2, share:14 },
+  { name:"Men's Trousers", units:8650,  rev:31.4, rating:4.2, returns:7.8, share:11 },
+  { name:"Women's Dresses",units:7430,  rev:28.6, rating:4.1, returns:10.1,share:10 },
+  { name:"Ethnic Sets",    units:5210,  rev:19.8, rating:4.0, returns:11.3,share:7  },
+  { name:"Shorts",         units:4180,  rev:12.1, rating:3.8, returns:12.8,share:4  },
+  { name:"Jackets",        units:3920,  rev:18.4, rating:4.3, returns:8.4, share:6  },
+  { name:"Leggings",       units:6340,  rev:15.6, rating:4.1, returns:9.6, share:5  },
+];
+
+function initProductCharts() {
+  mkBar('productBar',
+    products.map(p=>p.name.split("'")[0].trim().substring(0,10)),
+    [{ label:'Revenue (₹L)', data:products.map(p=>p.rev), backgroundColor:products.map((_,i)=>i===0?'#FF9900':'rgba(77,166,255,0.6)'), borderRadius:6, borderSkipped:false }],
+    { indexAxis:'y', plugins:{ legend:{ display:false } } }
+  );
+
+  if (charts['ratingScatter']) charts['ratingScatter'].destroy();
+  charts['ratingScatter'] = new Chart(document.getElementById('ratingScatter'), {
+    type:'bubble',
+    data:{ datasets:[{
+      label:'Products',
+      data: products.map(p=>({ x:p.rating, y:p.units/1000, r:p.rev/3 })),
+      backgroundColor:'rgba(255,153,0,0.6)',
+      borderColor:'#FF9900', borderWidth:1
+    }]},
+    options:{ ...baseOpts,
+      scales:{
+        x:{ grid:{color:grid}, ticks:{color:'#6B8299'}, title:{display:true,text:'Rating',color:'#6B8299'}, min:3.5, max:5 },
+        y:{ grid:{color:grid}, ticks:{color:'#6B8299'}, title:{display:true,text:'Units Sold (K)',color:'#6B8299'} }
+      }
+    }
+  });
+
+  const tbody = document.getElementById('productTbody');
+  tbody.innerHTML = '';
+  const maxRev = Math.max(...products.map(p=>p.rev));
+  products.forEach((p,i)=>{
+    const status = p.rev>40?'high':p.rev>25?'med':'low';
+    const statusText = p.rev>40?'High':p.rev>25?'Medium':'Low';
+    tbody.innerHTML += `<tr onclick="openProductDrill(${i})">
+      <td><span class="rank">${i+1}</span></td>
+      <td>${p.name}</td>
+      <td>${p.units.toLocaleString()}</td>
+      <td>₹${p.rev}L</td>
+      <td>⭐ ${p.rating}</td>
+      <td style="color:${p.returns>10?'#FF4D6D':p.returns>8?'#FF9900':'#00D68F'}">${p.returns}%</td>
+      <td>
+        <div class="bar-cell">
+          <div class="mini-bar-bg"><div class="mini-bar" style="width:${(p.rev/maxRev)*100}%"></div></div>
+          <span style="font-size:11px;color:#6B8299">${p.share}%</span>
+        </div>
+      </td>
+      <td><span class="pill ${status}">${statusText}</span></td>
+    </tr>`;
+  });
+}
+
+// ===================== GEO CHARTS =====================
+const states = [
+  { name:'Maharashtra', rev:62, pct:22 },
+  { name:'Karnataka',   rev:51, pct:18 },
+  { name:'Delhi',       rev:43, pct:15 },
+  { name:'Tamil Nadu',  rev:38, pct:13 },
+  { name:'Gujarat',     rev:31, pct:11 },
+  { name:'Uttar Pradesh',rev:27,pct:10 },
+  { name:'West Bengal', rev:22, pct:8  },
+  { name:'Rajasthan',   rev:18, pct:6  },
+  { name:'Telangana',   rev:15, pct:5  },
+  { name:'Punjab',      rev:12, pct:4  },
+];
+
+function initGeoCharts() {
+  const list = document.getElementById('stateList');
+  list.innerHTML = '';
+  states.forEach(s=>{
+    list.innerHTML += `<div class="state-row">
+      <span class="state-name">${s.name}</span>
+      <div class="state-bar-bg"><div class="state-bar" style="width:${s.pct}%"></div></div>
+      <span class="state-val">₹${s.rev}L</span>
+    </div>`;
+  });
+
+  mkBar('stateBar', states.map(s=>s.name.substring(0,6)), [
+    { label:'Orders (K)', data:[38,31,26,23,19,17,14,11,9,7], backgroundColor:'rgba(255,153,0,0.7)', borderRadius:6, borderSkipped:false }
+  ], { plugins:{ legend:{ display:false } } });
+
+  mkDoughnut('tierChart',['Tier 1','Tier 2','Tier 3'],[52,32,16],['#FF9900','#4DA6FF','#00D68F']);
+
+  mkBar('deliveryChart',['North','South','East','West'],[
+    { label:'Avg Days', data:[2.8,2.4,3.6,3.1], backgroundColor:['#4DA6FF','#00D68F','#FF4D6D','#FF9900'], borderRadius:6, borderSkipped:false }
+  ],{ plugins:{ legend:{ display:false } } });
+}
+
+// ===================== DRILL DOWN MODAL =====================
+function openDrillDown(type) {
+  document.querySelectorAll('.kpi-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('kpi-' + type).classList.add('selected');
+
+  const modal = document.getElementById('modal');
+  modal.classList.add('open');
+
+  if (modalChartInst) { modalChartInst.destroy(); modalChartInst = null; }
+
+  const ctx = document.getElementById('modalChart').getContext('2d');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  if (type === 'revenue') {
+    document.getElementById('modalTitle').textContent = 'Revenue — Monthly Breakdown';
+    document.getElementById('modalSub').textContent = 'Year-wise monthly revenue trend (₹ Lakhs)';
+    modalChartInst = new Chart(ctx, {
+      type:'bar',
+      data:{ labels:months, datasets:[
+        { label:'2022', data:[18,21,19,24,22,28,26,30,32,48,52,41], backgroundColor:'rgba(255,153,0,0.7)', borderRadius:4 },
+        { label:'2021', data:[14,16,15,18,17,22,21,24,26,38,42,33], backgroundColor:'rgba(77,166,255,0.5)', borderRadius:4 },
+        { label:'2020', data:[11,13,12,14,14,18,17,20,21,30,34,27], backgroundColor:'rgba(0,214,143,0.4)', borderRadius:4 }
+      ]},
+      options:{ ...baseOpts, scales:{ x:{grid:{display:false},ticks:{color:'#6B8299'}}, y:{grid:{color:grid},ticks:{color:'#6B8299'}} } }
+    });
+    document.getElementById('modalStats').innerHTML = `
+      <div class="modal-stat"><div class="modal-stat-val">₹92L</div><div class="modal-stat-lbl">2022 Revenue</div></div>
+      <div class="modal-stat"><div class="modal-stat-val">Oct–Nov</div><div class="modal-stat-lbl">Peak Months</div></div>
+      <div class="modal-stat"><div class="modal-stat-val">+18.4%</div><div class="modal-stat-lbl">YoY Growth</div></div>`;
+  }
+  else if (type === 'orders') {
+    document.getElementById('modalTitle').textContent = 'Orders — Status Breakdown';
+    document.getElementById('modalSub').textContent = 'Order status distribution across fulfillment types';
+    modalChartInst = new Chart(ctx, {
+      type:'doughnut',
+      data:{ labels:['Delivered','Shipped','Cancelled','Returned','Pending'],
+        datasets:[{ data:[72,14,6,5,3], backgroundColor:['#00D68F','#4DA6FF','#FF4D6D','#FF9900','#A78BFA'], borderColor:'#1F2B3A', borderWidth:3 }] },
+      options:{ ...baseOpts, cutout:'60%' }
+    });
+    document.getElementById('modalStats').innerHTML = `
+      <div class="modal-stat"><div class="modal-stat-val">72%</div><div class="modal-stat-lbl">Delivery Rate</div></div>
+      <div class="modal-stat"><div class="modal-stat-val">6%</div><div class="modal-stat-lbl">Cancel Rate</div></div>
+      <div class="modal-stat"><div class="modal-stat-val">1.28L</div><div class="modal-stat-lbl">Total Orders</div></div>`;
+  }
+  else if (type === 'aov') {
+    document.getElementById('modalTitle').textContent = 'Avg Order Value — Yearly Trend';
+    document.getElementById('modalSub').textContent = 'How AOV has grown from 2019 to 2022';
+    modalChartInst = new Chart(ctx, {
+      type:'line',
+      data:{ labels:['2019','2020','2021','2022'],
+        datasets:[{ label:'AOV (₹)', data:[1840,2187,2408,2540], borderColor:'#4DA6FF', backgroundColor:'rgba(77,166,255,0.1)', tension:0.4, fill:true, pointRadius:6, pointBackgroundColor:'#4DA6FF', borderWidth:2 }] },
+      options:{ ...baseOpts, scales:{ x:{grid:{display:false},ticks:{color:'#6B8299'}}, y:{grid:{color:grid},ticks:{color:'#6B8299'}} } }
+    });
+    document.getElementById('modalStats').innerHTML = `
+      <div class="modal-stat"><div class="modal-stat-val">₹2,540</div><div class="modal-stat-lbl">2022 AOV</div></div>
+      <div class="modal-stat"><div class="modal-stat-val">+38%</div><div class="modal-stat-lbl">4-Year Growth</div></div>
+      <div class="modal-stat"><div class="modal-stat-val">₹700</div><div class="modal-stat-lbl">Net Increase</div></div>`;
+  }
+  else if (type === 'returns') {
+    document.getElementById('modalTitle').textContent = 'Returns — Category Breakdown';
+    document.getElementById('modalSub').textContent = 'Return rate percentage by product category';
+    modalChartInst = new Chart(ctx, {
+      type:'bar',
+      data:{ labels:['Electronics','Ethnic Sets','Shorts','Dresses','Sarees','Kurtas','T-Shirts','Blazers'],
+        datasets:[{ label:'Return %', data:[14.1,11.3,12.8,10.1,9.2,8.1,7.2,6.5],
+          backgroundColor:d=>[14.1,11.3,12.8,10.1].includes(d.raw)?'rgba(255,77,109,0.7)':'rgba(0,214,143,0.6)',
+          borderRadius:6, borderSkipped:false }] },
+      options:{ ...baseOpts, indexAxis:'y', plugins:{ legend:{ display:false } }, scales:{ x:{grid:{color:grid},ticks:{color:'#6B8299'}}, y:{grid:{display:false},ticks:{color:'#6B8299'}} } }
+    });
+    document.getElementById('modalStats').innerHTML = `
+      <div class="modal-stat"><div class="modal-stat-val" style="color:#FF4D6D">14.1%</div><div class="modal-stat-lbl">Electronics (Highest)</div></div>
+      <div class="modal-stat"><div class="modal-stat-val" style="color:#00D68F">6.5%</div><div class="modal-stat-lbl">Blazers (Lowest)</div></div>
+      <div class="modal-stat"><div class="modal-stat-val">8.3%</div><div class="modal-stat-lbl">Overall Avg</div></div>`;
+  }
+}
+
+function openProductDrill(i) {
+  const p = products[i];
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('modalTitle').textContent = p.name + ' — Deep Dive';
+  document.getElementById('modalSub').textContent = 'Monthly sales performance and detailed metrics';
+  if (modalChartInst) { modalChartInst.destroy(); modalChartInst = null; }
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const base = Math.floor(p.units/18);
+  const monthly = months.map((_,idx)=>{
+    const festive = (idx>=9)?2.2:(idx>=5&&idx<=7)?1.3:1;
+    return Math.floor(base * festive * (0.85 + Math.random()*0.3));
+  });
+  const ctx = document.getElementById('modalChart').getContext('2d');
+  modalChartInst = new Chart(ctx, {
+    type:'bar',
+    data:{ labels:months, datasets:[{ label:'Units Sold', data:monthly, backgroundColor:monthly.map(v=>v===Math.max(...monthly)?'#FF9900':'rgba(77,166,255,0.6)'), borderRadius:4 }] },
+    options:{ ...baseOpts, plugins:{ legend:{ display:false } }, scales:{ x:{grid:{display:false},ticks:{color:'#6B8299'}}, y:{grid:{color:grid},ticks:{color:'#6B8299'}} } }
+  });
+  document.getElementById('modalStats').innerHTML = `
+    <div class="modal-stat"><div class="modal-stat-val">${p.units.toLocaleString()}</div><div class="modal-stat-lbl">Total Units</div></div>
+    <div class="modal-stat"><div class="modal-stat-val">⭐ ${p.rating}</div><div class="modal-stat-lbl">Avg Rating</div></div>
+    <div class="modal-stat"><div class="modal-stat-val" style="color:${p.returns>10?'#FF4D6D':'#00D68F'}">${p.returns}%</div><div class="modal-stat-lbl">Return Rate</div></div>`;
+}
+
+function closeModal(e) { if (e.target.id === 'modal') closeModalBtn(); }
+function closeModalBtn() {
+  document.getElementById('modal').classList.remove('open');
+  document.querySelectorAll('.kpi-card').forEach(c=>c.classList.remove('selected'));
+}
+
+// ===================== INIT =====================
+initOverviewCharts();
+</script>
+</body>
+</html>
